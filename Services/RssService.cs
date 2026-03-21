@@ -16,7 +16,7 @@
             _http = http;
         }
 
-        public async Task<List<Article>> GetArticlesAsync(string feedUrl)
+        public async Task<List<Article>> GetArticlesAsync(string feedUrl, string sourceName)
         {
             var articles = new List<Article>();
 
@@ -37,8 +37,9 @@
                     // RSS feeds usually store images in an <enclosure> tag
                     ImageUrl = item.Elements()
                        .FirstOrDefault(x => x.Name.LocalName == "thumbnail" || x.Name.LocalName == "content")
-                       ?.Attribute("url")?.Value ?? ""
-                        });
+                       ?.Attribute("url")?.Value ?? "",
+                    Source = sourceName,
+                }); 
             }
 
             return articles;

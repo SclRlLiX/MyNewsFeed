@@ -36,12 +36,26 @@
                         //big card
                         <div class="relative col-span-2 overflow-hidden rounded bg-gray-800">
                             <img src="@article.ImageUrl" alt="Article image" class="absolute inset-0 h-full w-full object-cover" />
+
+                            @* source tag *@
+                            <div class="absolute top-3 left-3 z-10">
+                                <span class="bg-black/10 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest">
+                                    @article.Source
+                                </span>
+                            </div>
+
                             <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
                             <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
-                                <a href="@article.Link" target="_blank" class="text-lg font-bold line-clamp-3 leading-tight text-white no-underline">
+                                @* Headline *@
+                                <a href="@article.Link"
+                                       @onclick="() => OpenModal(article)"
+                                       @onclick:preventDefault
+                                       class="font-headline text-headline font-bold line-clamp-3 text-white no-underline cursor-pointer">
                                     @article.Headline
                                 </a>
-                                <p class="text-xs text-gray-300 line-clamp-2 leading-snug">
+
+                                @* Description *@
+                                <p class="font-description text-description text-gray-300 line-clamp-2">
                                     @article.Description
                                 </p>
                             </div>
@@ -58,13 +72,25 @@
 
                         if (showImage)
                         {
-                            //small card with image
+                            //small card with image and headline only
                             <div class="relative col-span-1 h-full overflow-hidden rounded-lg bg-gray-800">
                                 <img src="@article.ImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
                                 <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
 
+                                @* source tag *@
+                                <div class="absolute top-3 left-3 z-10">
+                                    <span class="bg-black/10 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest">
+                                        @article.Source
+                                    </span>
+                                </div>
+
                                 <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
-                                    <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-4">
+
+                                    @* Headline *@
+                                    <a href="@article.Link"
+                                           @onclick="() => OpenModal(article)"
+                                           @onclick:preventDefault
+                                           class="font-headline text-headline-small font-bold text-white line-clamp-4 no-underline cursor-pointer">
                                         @article.Headline
                                     </a>
                                 </div>
@@ -72,13 +98,36 @@
                         }
                         else
                         {
+                            //small card text only
                             <div class="col-span-1 h-full bg-gray-900 p-3 flex flex-col rounded-lg">
-                                <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-6 mb-4">
-                                    @article.Headline
-                                </a>
-                                <p class="text-xs text-gray-300 line-clamp-5 justify-bottom leading-snug">
-                                    @article.Description
-                                </p>
+
+                                @* Headline *@
+                                <div>
+                                    <a href="@article.Link"
+                                           @onclick="() => OpenModal(article)"
+                                           @onclick:preventDefault
+                                           class="font-headline-text-only text-headline-small font-bold text-white line-clamp-6 mb-2 no-underline cursor-pointer">
+                                        @article.Headline
+                                    </a>
+                                
+                                    @* Description *@
+                                    <p class="font-description text-description text-gray-300 line-clamp-5 justify-bottom">
+                                        @article.Description
+                                    </p>
+                                </div>
+                                
+
+                                @* Badge for Text-Only Card (Using a subtle border) *@
+                                <div class="mt-auto pt-4">
+                                    <div class="mb-3">
+                                        <span class="border border-white/20 text-gray-500 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded">
+                                            @article.Source
+                                        </span>
+                                    </div>
+                                </div>
+                                
+
+
                             </div>
                         }
                     }
@@ -89,6 +138,55 @@
             @if (ArticleChunks.Count > _visibleChunks)
             {
                 <div @ref="observerTarget" class="h-10 w-full"></div>
+            }
+
+            @* OpenModal *@
+            @if (_selectedArticle != null)
+            {
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md" @onclick="CloseModal">
+        
+                    @* The Expanded Card *@
+                    <div class="bg-gray-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl border border-white/10 flex flex-col max-h-[90vh]" @onclick:stopPropagation>
+            
+                        @* 1. Top Image Section (Mirrors your Big Card) *@
+                        <div class="relative h-64 w-full shrink-0">
+                            <img src="@_selectedArticle.ImageUrl" class="absolute inset-0 h-full w-full object-cover" />
+    
+                            @* Gradient to ensure text readability if the image is bright at the bottom *@
+                            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
+    
+                            @* Source Badge moved to the Top Left *@
+                            <div class="absolute top-4 left-4 z-20">
+                                <span class="bg-black/10 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded shadow-sm">
+                                    @_selectedArticle.Source
+                                </span>
+                            </div>
+                        </div>
+
+                        @* 2. Content Section (Scrollable if the text is very long) *@
+                        <div class="p-6 overflow-y-auto">
+                            @* Headline is now a direct link *@
+                            <a href="@_selectedArticle.Link" target="_blank"
+                                   class="font-headline text-xl font-bold text-white leading-tight hover:text-blue-400 transition-colors block mb-4">
+                                @_selectedArticle.Headline
+                            </a>
+
+                            <p class="font-body text-base text-gray-300 leading-relaxed">
+                                @_selectedArticle.Description
+                            </p>
+                        </div>
+
+                        @* 3. Simple Footer *@
+                        <div class="p-6 border-t border-white/5 flex justify-between items-center bg-gray-900/50">
+                            <button @onclick="CloseModal" class="text-gray-500 hover:text-white text-sm font-bold uppercase">
+                                Close
+                            </button>
+                            <a href="@_selectedArticle.Link" target="_blank" class="text-blue-500 font-bold text-sm uppercase tracking-wider">
+                                Open Website
+                            </a>
+                        </div>
+                    </div>
+                </div>
             }
 
         }
@@ -123,14 +221,31 @@
     // --- CARDS ---
     private List<Article>? articles;
     private int _visibleChunks = 5; // Shows 15 articles initially
-    
+
     // Normal property to prevent re-rendering loops
     private List<(int Index, List<Article> Items)> ArticleChunks { get; set; } = new();
 
+    private readonly (string Name, string Url)[] _feeds =
+    {
+        ("FAZ", "https://corsproxy.io/?url=https://www.faz.net/rss/aktuell/"),
+        ("NYT", "https://corsproxy.io/?url=https://rss.nytimes.com/services/xml/rss/nyt/World.xml")
+    };
+
     protected override async Task OnInitializedAsync()
     {
-        articles = await RssService.GetArticlesAsync("https://corsproxy.io/?url=https://www.faz.net/rss/aktuell/");
-        
+        // Pass both pieces of data from the Tuple to the service
+        var fetchTasks = _feeds.Select(f => RssService.GetArticlesAsync(f.Url, f.Name));
+
+        var results = await Task.WhenAll(fetchTasks);
+
+        // 1. Merge all lists
+        articles = results.SelectMany(a => a)
+            // 2. ONLY keep articles that have an image URL
+            .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl))
+            // 3. Shuffle the "visual-only" list
+            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
+    
         if (articles != null)
         {
             ArticleChunks = articles
@@ -171,4 +286,11 @@
         _visibleChunks += 5;
         StateHasChanged(); // Tell Blazor to draw the new items
     }
+
+
+    //Modal
+    private Article? _selectedArticle;
+
+    private void OpenModal(Article article) => _selectedArticle = article;
+    private void CloseModal() => _selectedArticle = null;
 }
