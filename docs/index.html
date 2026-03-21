@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>MyNewsFeed</title>
     <base href="/MyNewsFeed/" />
-    <link href="_framework/dotnet.r8xywuz20o.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-NRt4CfWBrAi0/L8fWkteqt20BayZO5Hp5jMbwx/HO8E=" />
+    <link href="_framework/dotnet.od6azyibkc.js" rel="preload" as="script" fetchpriority="high" crossorigin="anonymous" integrity="sha256-NBZu8kcAU5DDWpQGmYAwG8ZPYNqp4hdp58RURMO7VZs=" />
     <!--<link rel="stylesheet" href="lib/bootstrap/dist/css/bootstrap.min.css" />-->
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" type="image/png" href="favicon.png" />
@@ -18,17 +18,17 @@
   "imports": {
     "./_framework/blazor.webassembly.js": "./_framework/blazor.webassembly.66stpp682q.js",
     "./_framework/dotnet.native.js": "./_framework/dotnet.native.4xbsgn06op.js",
-    "./_framework/dotnet.js": "./_framework/dotnet.r8xywuz20o.js",
+    "./_framework/dotnet.js": "./_framework/dotnet.od6azyibkc.js",
     "./_framework/dotnet.runtime.js": "./_framework/dotnet.runtime.zj9dll5ffg.js"
   },
   "scopes": {},
   "integrity": {
     "./_framework/blazor.webassembly.66stpp682q.js": "sha256-3lCWrko3zwspV40aQhs2S/IMkRSarnHRKIdkHhuXIBA=",
     "./_framework/blazor.webassembly.js": "sha256-3lCWrko3zwspV40aQhs2S/IMkRSarnHRKIdkHhuXIBA=",
-    "./_framework/dotnet.js": "sha256-NRt4CfWBrAi0/L8fWkteqt20BayZO5Hp5jMbwx/HO8E=",
+    "./_framework/dotnet.js": "sha256-NBZu8kcAU5DDWpQGmYAwG8ZPYNqp4hdp58RURMO7VZs=",
     "./_framework/dotnet.native.4xbsgn06op.js": "sha256-WHdERxxgCQA79nOtWAOvxQ2f7p1kEx+swJwfE4AE9Nk=",
     "./_framework/dotnet.native.js": "sha256-WHdERxxgCQA79nOtWAOvxQ2f7p1kEx+swJwfE4AE9Nk=",
-    "./_framework/dotnet.r8xywuz20o.js": "sha256-NRt4CfWBrAi0/L8fWkteqt20BayZO5Hp5jMbwx/HO8E=",
+    "./_framework/dotnet.od6azyibkc.js": "sha256-NBZu8kcAU5DDWpQGmYAwG8ZPYNqp4hdp58RURMO7VZs=",
     "./_framework/dotnet.runtime.js": "sha256-YdXsn/a7hb+UMypOFCf8bmv3S6PbDPewiNWqmUM/1dk=",
     "./_framework/dotnet.runtime.zj9dll5ffg.js": "sha256-YdXsn/a7hb+UMypOFCf8bmv3S6PbDPewiNWqmUM/1dk="
   }
@@ -60,7 +60,17 @@
         <a href="." class="reload">Reload</a>
         <span class="dismiss">🗙</span>
     </div>
-    <script src="_framework/blazor.webassembly.66stpp682q.js"></script>
+    <script src="_framework/blazor.webassembly.js" autostart="false"></script>
+    <script>
+        Blazor.start({
+            loadBootResource: function (type, name, defaultUri, integrity) {
+                return fetch(defaultUri, {
+                    cache: 'no-cache',
+                    integrity: undefined
+                });
+            }
+        });
+    </script>
     <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
 </body>
 
