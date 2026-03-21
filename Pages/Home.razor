@@ -8,8 +8,40 @@
 
 <div id="clock">
     <h1 class="text-4xl font-extrabold tracking-tight text-white py-5">
-        @_time
+        
     </h1>
+</div>
+
+<div class="flex justify-between items-center mb-8 px-2">
+    @* Date and Time Column *@
+    <div class="flex flex-col">
+        @* The Date: Small, Wide, and Colorful *@
+        <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-500 mb-1">
+            @DateTime.Now.ToString("dddd, MMMM dd")
+        </span>
+        
+        @* The Time: Large, Bold, and Tabular *@
+        <h1 class="font-headline text-4xl font-black text-white tracking-tighter tabular-nums">
+            @DateTime.Now.ToString("HH:mm")<span class="text-xl text-gray-500 ml-1">@DateTime.Now.ToString("ss")</span>
+        </h1>
+    </div>
+
+    <button @onclick="RefreshNews"
+            disabled="@_isRefreshing"
+            class="group flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50">
+        
+        @* The Refresh Icon *@
+        <svg xmlns="http://www.w3.org/2000/svg"
+             class="h-4 w-4 text-blue-400 @(_isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500")"
+             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+
+        <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
+            @(_isRefreshing ? "Shuffling..." : "Shuffle")
+        </span>
+    </button>
 </div>
 
 
@@ -35,12 +67,21 @@
                     {
                         //big card
                         <div class="relative col-span-2 overflow-hidden rounded bg-gray-800">
+
+                            @* image *@
                             <img src="@article.ImageUrl" alt="Article image" class="absolute inset-0 h-full w-full object-cover" />
 
                             @* source tag *@
                             <div class="absolute top-3 left-3 z-10">
-                                <span class="bg-black/10 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest">
+                                <span class="font-tag text-tag bg-black/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded uppercase tracking-widest">
                                     @article.Source
+                                </span>
+                            </div>
+
+                            @* date tag *@
+                            <div class="absolute top-3 right-3 z-10">
+                                <span class="font-tag text-tag bg-black/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded uppercase tracking-widest">
+                                    @GetTimeAgo(article.PublishedDate)
                                 </span>
                             </div>
 
@@ -74,13 +115,22 @@
                         {
                             //small card with image and headline only
                             <div class="relative col-span-1 h-full overflow-hidden rounded-lg bg-gray-800">
+
+                                @* image *@
                                 <img src="@article.ImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
                                 <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
 
                                 @* source tag *@
                                 <div class="absolute top-3 left-3 z-10">
-                                    <span class="bg-black/10 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-widest">
+                                    <span class="font-tag text-tag bg-black/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded uppercase tracking-widest">
                                         @article.Source
+                                    </span>
+                                </div>
+
+                                @* date tag *@
+                                <div class="absolute top-3 right-3 z-10">
+                                    <span class="font-tag text-tag bg-black/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded uppercase tracking-widest">
+                                        @GetTimeAgo(article.PublishedDate)
                                     </span>
                                 </div>
 
@@ -106,7 +156,7 @@
                                     <a href="@article.Link"
                                            @onclick="() => OpenModal(article)"
                                            @onclick:preventDefault
-                                           class="font-headline-text-only text-headline-small font-bold text-white line-clamp-6 mb-2 no-underline cursor-pointer">
+                                           class="font-headline-text-only text-headline-small font-bold text-white line-clamp-4 mb-2 no-underline cursor-pointer">
                                         @article.Headline
                                     </a>
                                 
@@ -118,12 +168,18 @@
                                 
 
                                 @* Badge for Text-Only Card (Using a subtle border) *@
-                                <div class="mt-auto pt-4">
-                                    <div class="mb-3">
-                                        <span class="border border-white/20 text-gray-500 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded">
-                                            @article.Source
-                                        </span>
-                                    </div>
+                                <div class="mt-auto pt-4 flex justify-between items-center">
+
+                                    @* source tag *@
+                                    <span class="font-tag text-tag border border-white/20 text-gray-500 uppercase tracking-widest px-2 py-1 rounded">
+                                        @article.Source
+                                    </span>
+
+                                    @* date tag *@
+                                    <span class="font-tag text-tag border border-white/20 text-gray-500 uppercase tracking-widest px-2 py-1 rounded">
+                                        @GetTimeAgo(article.PublishedDate)
+                                    </span>
+                                
                                 </div>
                                 
 
@@ -143,10 +199,10 @@
             @* OpenModal *@
             @if (_selectedArticle != null)
             {
-                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 backdrop-blur-md" @onclick="CloseModal">
+                <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 @(_isClosing ? "animate-backdrop-out" : "animate-backdrop")" @onclick="CloseModal">
         
                     @* The Expanded Card *@
-                    <div class="bg-gray-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl border border-white/10 flex flex-col max-h-[90vh]" @onclick:stopPropagation>
+                    <div class="bg-gray-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl border border-white/10 flex flex-col max-h-[90vh] @(_isClosing ? "animate-modal-out" : "animate-modal")" @onclick:stopPropagation>
             
                         @* 1. Top Image Section (Mirrors your Big Card) *@
                         <div class="relative h-64 w-full shrink-0">
@@ -155,43 +211,59 @@
                             @* Gradient to ensure text readability if the image is bright at the bottom *@
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
     
-                            @* Source Badge moved to the Top Left *@
+                            @* Source tag *@
                             <div class="absolute top-4 left-4 z-20">
                                 <span class="bg-black/10 backdrop-blur-md border border-white/10 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded shadow-sm">
                                     @_selectedArticle.Source
                                 </span>
                             </div>
+
+                            @* date tag *@
+                            <div class="absolute top-3 right-3 z-10">
+                                <span class="font-tag text-tag bg-black/10 backdrop-blur-md border border-white/10 px-2 py-1 rounded uppercase tracking-widest">
+                                    @GetTimeAgo(_selectedArticle.PublishedDate)
+                                </span>
+                            </div>
+
                         </div>
 
                         @* 2. Content Section (Scrollable if the text is very long) *@
                         <div class="p-6 overflow-y-auto">
                             @* Headline is now a direct link *@
                             <a href="@_selectedArticle.Link" target="_blank"
-                                   class="font-headline text-xl font-bold text-white leading-tight hover:text-blue-400 transition-colors block mb-4">
+                                   class="font-headline-text-only text-3xl font-bold text-white leading-tight hover:text-blue-400 transition-colors block mb-4">
                                 @_selectedArticle.Headline
                             </a>
 
-                            <p class="font-body text-base text-gray-300 leading-relaxed">
+                            <p class="font-description text-description text-gray-300">
                                 @_selectedArticle.Description
                             </p>
+
+                            @* Full Date: Pushed to the bottom of the content area *@
+                            <div class="pt-4">
+                                <p class="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">
+                                    - @_selectedArticle.PublishedDate.ToString("dddd, MMMM dd, yyyy")
+                                </p>
+                            </div>
+
                         </div>
 
-                        @* 3. Simple Footer *@
-                        <div class="p-6 border-t border-white/5 flex justify-between items-center bg-gray-900/50">
-                            <button @onclick="CloseModal" class="text-gray-500 hover:text-white text-sm font-bold uppercase">
+
+                        @* 3. Action Footer *@
+                        @* <div class="p-4 bg-black/20 flex justify-between items-center">
+                            <button @onclick="CloseModal" class="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest">
                                 Close
                             </button>
-                            <a href="@_selectedArticle.Link" target="_blank" class="text-blue-500 font-bold text-sm uppercase tracking-wider">
-                                Open Website
+                            <a href="@_selectedArticle.Link" target="_blank" class="text-blue-500 font-bold text-xs uppercase tracking-widest hover:text-blue-400">
+                                Read Full Story
                             </a>
-                        </div>
+                        </div> *@
+
                     </div>
                 </div>
             }
 
         }
-    
-        
     </div>
 </div>
 
@@ -228,8 +300,19 @@
     private readonly (string Name, string Url)[] _feeds =
     {
         ("FAZ", "https://corsproxy.io/?url=https://www.faz.net/rss/aktuell/"),
-        ("NYT", "https://corsproxy.io/?url=https://rss.nytimes.com/services/xml/rss/nyt/World.xml")
+        ("NYT", "https://corsproxy.io/?url=https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+        ("WSJ", "https://corsproxy.io/?url=https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness"),
+        ("FT", "https://corsproxy.io/?url=https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss")
     };
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.Now - dateTime;
+        if (span.TotalDays > 1) return $"{(int)span.TotalDays}d ago";
+        if (span.TotalHours > 1) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalMinutes > 1) return $"{(int)span.TotalMinutes}m ago";
+        return "Just now";
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -254,6 +337,23 @@
                 .ToList();
         }
     }
+
+
+    private bool _isRefreshing = false;
+
+    private async Task RefreshNews()
+    {
+        if (_isRefreshing) return; // Prevent double-clicks
+
+        _isRefreshing = true;
+    
+        // This re-runs your existing fetching, filtering, and shuffling logic
+        await OnInitializedAsync();
+
+        _isRefreshing = false;
+        StateHasChanged(); // Tells Blazor to "repaint" the UI with the new shuffle
+    }
+
 
     private void LoadMore()
     {
@@ -289,8 +389,26 @@
 
 
     //Modal
+    // Declare the state variables
     private Article? _selectedArticle;
+    private bool _isClosing = false;
 
+    // Open stays simple
     private void OpenModal(Article article) => _selectedArticle = article;
-    private void CloseModal() => _selectedArticle = null;
+
+    // Close must be the ASYNC version only
+    private async Task CloseModal()
+    {
+        if (_isClosing) return; // Prevent double-clicks during animation
+
+        _isClosing = true;
+        StateHasChanged();
+
+        // Wait for your CSS "animate-modal-out" to finish
+        await Task.Delay(200);
+
+        _selectedArticle = null;
+        _isClosing = false;
+        StateHasChanged();
+    }
 }
