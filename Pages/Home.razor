@@ -4,13 +4,8 @@
 @inject RssService RssService
 @inject IJSRuntime JS
 
-<PageTitle>Home</PageTitle>
+<PageTitle>MyNewsFeed</PageTitle>
 
-<div id="clock">
-    <h1 class="text-4xl font-extrabold tracking-tight text-white py-5">
-        
-    </h1>
-</div>
 
 <div class="flex justify-between items-center mb-8 px-2">
     @* Date and Time Column *@
@@ -206,7 +201,7 @@
             
                         @* 1. Top Image Section (Mirrors your Big Card) *@
                         <div class="relative h-64 w-full shrink-0">
-                            <img src="@_selectedArticle.ImageUrl" class="absolute inset-0 h-full w-full object-cover" />
+                            <img src="@_selectedArticle.ImageUrl" class="absolute block inset-0 h-full w-full object-cover" />
     
                             @* Gradient to ensure text readability if the image is bright at the bottom *@
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
@@ -235,7 +230,7 @@
                                 @_selectedArticle.Headline
                             </a>
 
-                            <p class="font-description text-description text-gray-300">
+                            <p class="font-description text-l text-gray-300">
                                 @_selectedArticle.Description
                             </p>
 
