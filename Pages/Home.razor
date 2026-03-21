@@ -2,6 +2,7 @@
 @using MyNewsFeed.Models
 @using MyNewsFeed.Services
 @inject RssService RssService
+@inject IJSRuntime JS
 
 <PageTitle>Home</PageTitle>
 
@@ -21,63 +22,75 @@
         }
         else
         {
-            @for (int i = 0; i < articles.Count; i++)
+            @foreach (var chunk in ArticleChunks.Take(_visibleChunks))
             {
-                var article = articles[i];
-                var position = i % 3; 
-                bool isEvenRowSet = (i / 3) % 2 == 0;
+                bool isEvenRowSet = chunk.Index % 2 == 0;
 
-                
-                if (position == 0)
+                @for (int i = 0; i < chunk.Items.Count; i++)
                 {
-                    //big card
-                    <div class="relative col-span-2 overflow-hidden rounded bg-gray-800">
-                        <img src="@article.ImageUrl" alt="Article image" class="absolute inset-0 h-full w-full object-cover" />
-                        <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
-                        <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
-                            <a href="@article.Link" target="_blank" class="text-lg font-bold line-clamp-3 leading-tight text-white no-underline">
-                                @article.Headline
-                            </a>
-                            <p class="text-xs text-gray-300 line-clamp-2 leading-snug">
-                                @article.Description
-                            </p>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    // Decide if this specific small card slot should be Image or Text
-                    // If it's the first small card (pos 1) and an even row, show Image.
-                    // If it's an odd row, show Text.
-                    bool showImageFirst = (position == 1 && isEvenRowSet) || (position == 2 && !isEvenRowSet);
-                    
-                    if (showImageFirst)
+                    var article = chunk.Items[i];
+
+
+                    if (i == 0)
                     {
-                        //small card with image
-                        <div class="relative col-span-1 h-full overflow-hidden rounded-lg bg-gray-800">
-                            <img src="@article.ImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
-                            <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-    
+                        //big card
+                        <div class="relative col-span-2 overflow-hidden rounded bg-gray-800">
+                            <img src="@article.ImageUrl" alt="Article image" class="absolute inset-0 h-full w-full object-cover" />
+                            <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
                             <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
-                                <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-4">
+                                <a href="@article.Link" target="_blank" class="text-lg font-bold line-clamp-3 leading-tight text-white no-underline">
                                     @article.Headline
                                 </a>
+                                <p class="text-xs text-gray-300 line-clamp-2 leading-snug">
+                                    @article.Description
+                                </p>
                             </div>
                         </div>
                     }
                     else
                     {
-                        <div class="col-span-1 h-full bg-gray-900 p-3 flex flex-col rounded-lg">
-                            <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-6 mb-4">
-                                @article.Headline
-                            </a>
-                            <p class="text-xs text-gray-300 line-clamp-5 justify-bottom leading-snug">
-                                @article.Description
-                            </p>
-                        </div>
-                    }   
+                        // Fill the row if this is the only small card in the chunk
+                        bool isOrphan = chunk.Items.Count == 2 && i == 1;
+                        string colSpan = isOrphan ? "col-span-2" : "col-span-1";
+                        
+                        // Zig-zag pattern
+                        bool showImage = (i == 1 && isEvenRowSet) || (i == 2 && !isEvenRowSet);
+
+                        if (showImage)
+                        {
+                            //small card with image
+                            <div class="relative col-span-1 h-full overflow-hidden rounded-lg bg-gray-800">
+                                <img src="@article.ImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
+                                <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+
+                                <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
+                                    <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-4">
+                                        @article.Headline
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-span-1 h-full bg-gray-900 p-3 flex flex-col rounded-lg">
+                                <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-6 mb-4">
+                                    @article.Headline
+                                </a>
+                                <p class="text-xs text-gray-300 line-clamp-5 justify-bottom leading-snug">
+                                    @article.Description
+                                </p>
+                            </div>
+                        }
+                    }
                 }
             }
+
+            @* Load More *@
+            @if (ArticleChunks.Count > _visibleChunks)
+            {
+                <div @ref="observerTarget" class="h-10 w-full"></div>
+            }
+
         }
     
         
@@ -107,14 +120,55 @@
     public void Dispose() => _timer?.Dispose();
 
 
-
-
-    // Cards
+    // --- CARDS ---
     private List<Article>? articles;
+    private int _visibleChunks = 5; // Shows 15 articles initially
+    
+    // Normal property to prevent re-rendering loops
+    private List<(int Index, List<Article> Items)> ArticleChunks { get; set; } = new();
 
     protected override async Task OnInitializedAsync()
     {
-        // Replace this URL with your preferred RSS feed!
         articles = await RssService.GetArticlesAsync("https://corsproxy.io/?url=https://www.faz.net/rss/aktuell/");
+        
+        if (articles != null)
+        {
+            ArticleChunks = articles
+                .Chunk(3)
+                .Select((items, index) => (index, items.ToList()))
+                .ToList();
+        }
+    }
+
+    private void LoadMore()
+    {
+        _visibleChunks += 10; // Adds 20 more articles per click
+    }
+
+    // 1. Add these two variables
+    private ElementReference observerTarget;
+    private DotNetObjectReference<Home>? dotNetHelper; // Change 'YourComponentName' to the actual name of your .razor file!
+
+    // 2. Add OnAfterRenderAsync to start the observer
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            dotNetHelper = DotNetObjectReference.Create(this);
+        }
+        
+        // Re-attach observer when the tracker renders
+        if (ArticleChunks.Count > _visibleChunks && observerTarget.Context != null)
+        {
+            await JS.InvokeVoidAsync("observerInterop.initialize", dotNetHelper, observerTarget);
+        }
+    }
+
+    // 3. Mark LoadMore with [JSInvokable] so JavaScript can fire it
+    [JSInvokable]
+    public void TriggerLoadMore()
+    {
+        _visibleChunks += 5;
+        StateHasChanged(); // Tell Blazor to draw the new items
     }
 }
