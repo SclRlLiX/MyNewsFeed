@@ -1,7 +1,120 @@
 ﻿@page "/"
+@using MyNewsFeed.Models
+@using MyNewsFeed.Services
+@inject RssService RssService
 
 <PageTitle>Home</PageTitle>
 
-<h1>Hello, world!</h1>
+<div id="clock">
+    <h1 class="text-4xl font-extrabold tracking-tight text-white py-5">
+        @_time
+    </h1>
+</div>
 
-Welcome to your new app.
+
+<div id="cards">
+    <div class="mx-auto w-full grid grid-cols-2 gap-2 auto-rows-[250px]">
+
+        @if (articles == null)
+        {
+            <div class="col-span-2 text-white text-center mt-10">Loading feed...</div>
+        }
+        else
+        {
+            @for (int i = 0; i < articles.Count; i++)
+            {
+                var article = articles[i];
+                var position = i % 3; 
+                bool isEvenRowSet = (i / 3) % 2 == 0;
+
+                
+                if (position == 0)
+                {
+                    //big card
+                    <div class="relative col-span-2 overflow-hidden rounded bg-gray-800">
+                        <img src="@article.ImageUrl" alt="Article image" class="absolute inset-0 h-full w-full object-cover" />
+                        <div class="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black via-black/70 to-transparent"></div>
+                        <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
+                            <a href="@article.Link" target="_blank" class="text-lg font-bold line-clamp-3 leading-tight text-white no-underline">
+                                @article.Headline
+                            </a>
+                            <p class="text-xs text-gray-300 line-clamp-2 leading-snug">
+                                @article.Description
+                            </p>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    // Decide if this specific small card slot should be Image or Text
+                    // If it's the first small card (pos 1) and an even row, show Image.
+                    // If it's an odd row, show Text.
+                    bool showImageFirst = (position == 1 && isEvenRowSet) || (position == 2 && !isEvenRowSet);
+                    
+                    if (showImageFirst)
+                    {
+                        //small card with image
+                        <div class="relative col-span-1 h-full overflow-hidden rounded-lg bg-gray-800">
+                            <img src="@article.ImageUrl" alt="" class="absolute inset-0 h-full w-full object-cover" />
+                            <div class="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
+    
+                            <div class="absolute bottom-0 left-0 w-full p-3 flex flex-col justify-end">
+                                <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-4">
+                                    @article.Headline
+                                </a>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-span-1 h-full bg-gray-900 p-3 flex flex-col rounded-lg">
+                            <a href="@article.Link" class="text-sm font-bold leading-tight text-white line-clamp-6 mb-4">
+                                @article.Headline
+                            </a>
+                            <p class="text-xs text-gray-300 line-clamp-5 justify-bottom leading-snug">
+                                @article.Description
+                            </p>
+                        </div>
+                    }   
+                }
+            }
+        }
+    
+        
+    </div>
+</div>
+
+
+@code {
+
+    //clock
+    private string _time = DateTime.Now.ToString("HH:mm:ss");
+    private System.Timers.Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        // Update every 1 second (1000ms)
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += (s, e) =>
+        {
+            _time = DateTime.Now.ToString("HH:mm:ss");
+            InvokeAsync(StateHasChanged); // Forces the UI to refresh
+        };
+        _timer.Start();
+    }
+
+    // Always dispose of timers to prevent memory leaks
+    public void Dispose() => _timer?.Dispose();
+
+
+
+
+    // Cards
+    private List<Article>? articles;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Replace this URL with your preferred RSS feed!
+        articles = await RssService.GetArticlesAsync("https://corsproxy.io/?url=https://www.faz.net/rss/aktuell/");
+    }
+}
