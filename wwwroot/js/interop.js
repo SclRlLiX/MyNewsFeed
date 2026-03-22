@@ -32,7 +32,21 @@
 
 window.scrollToElement = function (elementId) {
     const el = document.getElementById(elementId);
-    if (el) {
+    if (!el) return;
+
+    // For pill buttons: manually scroll the overflow container instead of using
+    // scrollIntoView(), which triggers Safari's focus management and steals focus
+    // from the clicked button to the adjacent one.
+    const scrollableParent = el.closest('.overflow-x-auto');
+    if (scrollableParent) {
+        const containerRect = scrollableParent.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const targetScrollLeft = scrollableParent.scrollLeft
+            + elRect.left - containerRect.left
+            - (containerRect.width / 2)
+            + (elRect.width / 2);
+        scrollableParent.scrollTo({ left: targetScrollLeft, behavior: 'smooth' });
+    } else {
         el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
     }
 }
