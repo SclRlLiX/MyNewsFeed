@@ -7,7 +7,7 @@
 <PageTitle>MyNewsFeed</PageTitle>
 
 
-<div class="flex justify-between items-center mb-8 px-2">
+<div class="flex justify-between items-center mb-8 mt-2 px-2">
     @* Date and Time Column *@
     <div class="flex flex-col">
         @* The Date: Small, Wide, and Colorful *@
@@ -16,14 +16,14 @@
         </span>
         
         @* The Time: Large, Bold, and Tabular *@
-        <h1 class="font-headline text-4xl font-black text-white tracking-tighter tabular-nums">
+        <h1 class="font-jb-mono text-4xl font-black text-white tabular-nums">
             @DateTime.Now.ToString("HH:mm")<span class="text-xl text-gray-500 ml-1">@DateTime.Now.ToString("ss")</span>
         </h1>
     </div>
 
     <button @onclick="RefreshNews"
             disabled="@_isRefreshing"
-            class="group flex items-center gap-2 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50">
+            class="group flex items-center gap-2 mt-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50">
         
         @* The Refresh Icon *@
         <svg xmlns="http://www.w3.org/2000/svg"
@@ -201,7 +201,7 @@
             
                         @* 1. Top Image Section (Mirrors your Big Card) *@
                         <div class="relative h-64 w-full shrink-0">
-                            <img src="@_selectedArticle.ImageUrl" class="absolute block inset-0 h-full w-full object-cover" />
+                            <img src="@_selectedArticle.ImageUrl" class="absolute block align-bottom inset-0 h-[calc(100%+1px)] w-full object-cover" />
     
                             @* Gradient to ensure text readability if the image is bright at the bottom *@
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
@@ -236,7 +236,7 @@
 
                             @* Full Date: Pushed to the bottom of the content area *@
                             <div class="pt-4">
-                                <p class="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">
+                                <p class="font-jb-mono text-[10px] text-gray-500 uppercase tracking-[0.2em] font-medium">
                                     - @_selectedArticle.PublishedDate.ToString("dddd, MMMM dd, yyyy")
                                 </p>
                             </div>
@@ -292,22 +292,24 @@
     // Normal property to prevent re-rendering loops
     private List<(int Index, List<Article> Items)> ArticleChunks { get; set; } = new();
 
+    private const string ProxyBase = "https://corsproxy.io/?url=";
+
     private readonly (string Name, string Url)[] _feeds =
     {
-        ("FAZ", "https://corsproxy.io/?url=https://www.faz.net/rss/aktuell/"),
-        ("NYT", "https://corsproxy.io/?url=https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
-        ("WSJ", "https://corsproxy.io/?url=https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness"),
-        ("FT", "https://corsproxy.io/?url=https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss")
+        ("FAZ", $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
+        ("FAZ", $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
+        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"),
+        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml"),
+        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml"),
+        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml"),
+        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/US.xml"),
+        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness"),
+        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSMarketsMain"),
+        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWSJD"),
+        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWorldNews"),
+        ("FT",  $"{ProxyBase}https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss")
     };
-
-    private string GetTimeAgo(DateTime dateTime)
-    {
-        var span = DateTime.Now - dateTime;
-        if (span.TotalDays > 1) return $"{(int)span.TotalDays}d ago";
-        if (span.TotalHours > 1) return $"{(int)span.TotalHours}h ago";
-        if (span.TotalMinutes > 1) return $"{(int)span.TotalMinutes}m ago";
-        return "Just now";
-    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -316,13 +318,15 @@
 
         var results = await Task.WhenAll(fetchTasks);
 
-        // 1. Merge all lists
+        // Merge all lists
         articles = results.SelectMany(a => a)
-            // 2. ONLY keep articles that have an image URL
-            .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl))
-            // 3. Shuffle the "visual-only" list
-            .OrderBy(_ => Random.Shared.Next())
-            .ToList();
+        //Filter for images AND exclude "buyside" links
+        .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl) &&
+                    !a.Link.Contains("buyside", StringComparison.OrdinalIgnoreCase))
+    
+        //Shuffle the filtered list
+        .OrderBy(_ => Random.Shared.Next())
+        .ToList();
     
         if (articles != null)
         {
@@ -331,6 +335,15 @@
                 .Select((items, index) => (index, items.ToList()))
                 .ToList();
         }
+    }
+
+    private string GetTimeAgo(DateTime dateTime)
+    {
+        var span = DateTime.Now - dateTime;
+        if (span.TotalDays > 1) return $"{(int)span.TotalDays}d ago";
+        if (span.TotalHours > 1) return $"{(int)span.TotalHours}h ago";
+        if (span.TotalMinutes > 1) return $"{(int)span.TotalMinutes}m ago";
+        return "Just now";
     }
 
 
