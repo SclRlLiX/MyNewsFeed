@@ -264,11 +264,11 @@
                     <div class="bg-gray-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl border border-white/10 flex flex-col max-h-[90vh] [transform:translateZ(0)] @(_isClosing ? "animate-modal-out" : "animate-modal")" @onclick:stopPropagation>
 
                         @* 1. Top Image Section (Mirrors your Big Card) *@
-                        <div class="relative h-64 w-full shrink-0 overflow-hidden bg-gray-900">
-                            <img src="@_selectedArticle.ImageUrl" class="absolute block align-bottom inset-0 h-full w-full object-cover" />
+                        <div class="relative h-64 w-full shrink-0 overflow-hidden bg-gray-900 mb-[-1px]">
+                            <img src="@_selectedArticle.ImageUrl" class="absolute inset-0 h-full w-full object-cover" />
 
                             @* Gradient to ensure text readability if the image is bright at the bottom *@
-                            <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
+                            <div class="absolute inset-x-0 bottom-[-1px] h-[calc(50%+1px)] bg-gradient-to-t from-gray-900 to-transparent"></div>
 
                             @* Source tag *@
                             <div class="absolute top-4 left-4 z-20">
