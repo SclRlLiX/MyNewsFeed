@@ -261,15 +261,15 @@
                 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 @(_isClosing ? "animate-backdrop-out" : "animate-backdrop")" @onclick="CloseModal">
         
                     @* The Expanded Card *@
-                    <div class="bg-gray-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl border border-white/10 flex flex-col max-h-[90vh] @(_isClosing ? "animate-modal-out" : "animate-modal")" @onclick:stopPropagation>
-            
+                    <div class="bg-gray-900 rounded-2xl overflow-hidden max-w-lg w-full shadow-2xl border border-white/10 flex flex-col max-h-[90vh] [transform:translateZ(0)] @(_isClosing ? "animate-modal-out" : "animate-modal")" @onclick:stopPropagation>
+
                         @* 1. Top Image Section (Mirrors your Big Card) *@
-                        <div class="relative h-64 w-full shrink-0">
+                        <div class="relative h-64 w-full shrink-0 overflow-hidden bg-gray-900">
                             <img src="@_selectedArticle.ImageUrl" class="absolute block align-bottom inset-0 h-full w-full object-cover" />
-    
+
                             @* Gradient to ensure text readability if the image is bright at the bottom *@
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
-    
+
                             @* Source tag *@
                             <div class="absolute top-4 left-4 z-20">
                                 <span class="glass-tag bg-black/10 border border-white/10 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded shadow-sm">
@@ -290,7 +290,7 @@
                         <div class="p-6 overflow-y-auto">
 
                             <a href="@_selectedArticle.Link" target="_blank"
-                                   class="font-headline text-2xl font-bold text-white leading-tight tracking-tight  transition-colors block mb-3">
+                                   class="font-headline-secondary text-2xl font-bold text-white leading-tight tracking-tight  transition-colors block mb-3">
                                 @_selectedArticle.Headline
                             </a>
 
