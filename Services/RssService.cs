@@ -18,7 +18,7 @@
             _http = http;
         }
 
-        public async Task<List<Article>> GetArticlesAsync(string feedUrl, string sourceName)
+        public async Task<List<Article>> GetArticlesAsync(string feedUrl, string sourceName, string category)
         {
             var articles = new List<Article>();
 
@@ -61,7 +61,8 @@
                     // RSS feeds usually store images in an <enclosure> tag
                     ImageUrl = finalImageUrl,
                     Source = sourceName,
-                    PublishedDate = DateTime.TryParse(item.Element("pubDate")?.Value, out var dt) ? dt : DateTime.Now
+                    PublishedDate = DateTime.TryParse(item.Element("pubDate")?.Value, out var dt) ? dt : DateTime.Now,
+                    Category = category
                 });
             }
 

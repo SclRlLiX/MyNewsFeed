@@ -25,8 +25,7 @@
 			<WwwrootFiles Include="$(PublishDir)wwwroot\**\*.*" />
 		</ItemGroup>
 
-		<Copy SourceFiles="@(WwwrootFiles)"
-			  DestinationFolder="$(PublishDir)%(RecursiveDir)" />
+		<Copy SourceFiles="@(WwwrootFiles)" DestinationFolder="$(PublishDir)%(RecursiveDir)" />
 
 		<RemoveDir Directories="$(PublishDir)wwwroot" />
 	</Target>

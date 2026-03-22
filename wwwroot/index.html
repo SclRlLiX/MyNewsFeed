@@ -66,18 +66,7 @@
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script>navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' });</script>
 
-    <script>
-        window.observerInterop = {
-            initialize: function (dotNetHelper, element) {
-                let observer = new IntersectionObserver((entries) => {
-                    if (entries[0].isIntersecting) {
-                        dotNetHelper.invokeMethodAsync('TriggerLoadMore');
-                    }
-                });
-                observer.observe(element);
-            }
-        };
-    </script>
+    <script src="js/interop.js"></script>
 </body>
 
 </html>

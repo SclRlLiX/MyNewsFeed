@@ -3,15 +3,19 @@
 @using MyNewsFeed.Services
 @inject RssService RssService
 @inject IJSRuntime JS
+@implements IDisposable
 
 <PageTitle>MyNewsFeed</PageTitle>
 
+@* This invisible div tells us when we've scrolled away from the top *@
+<div id="top-sentinel" class="h-1 w-full"></div>
 
-<div class="flex justify-between items-center mb-8 mt-2 px-2">
+
+<div class="flex justify-between items-center mb-4 mt-2 px-2">
     @* Date and Time Column *@
     <div class="flex flex-col">
         @* The Date: Small, Wide, and Colorful *@
-        <span class="text-[10px] font-bold uppercase tracking-[0.3em] text-blue-500 mb-1">
+        <span class="font-tag text-[10px] font-bold uppercase tracking-[0.3em] text-blue-500 mb-1">
             @DateTime.Now.ToString("dddd, MMMM dd")
         </span>
         
@@ -39,7 +43,35 @@
     </button>
 </div>
 
+@* categories *@
+<div class="flex items-center gap-2 overflow-x-auto pb-4 w-full scrollbar-hide mb-2">
+    
+    @* All Button *@
+    <button id="pill-All" @onclick='() => HandlePillClick("All", "pill-All")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+        @(_activeFilter == "All" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
+        All
+    </button>
+    
+    @* New Button *@
+    <button id="pill-New" @onclick='() => HandlePillClick("New", "pill - New")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+        @(_activeFilter == "New" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
+        New
+    </button>
 
+    @* Category Buttons *@
+    @foreach (var category in Categories)
+    {
+        var id = $"pill-{category}";
+        <button id="@id" @onclick='() => HandlePillClick(category, id)' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+            @(_activeFilter == category ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
+            @category
+        </button>
+    }
+
+</div>
+
+
+@* cards *@
 <div id="cards">
     <div class="mx-auto w-full grid grid-cols-2 gap-2 auto-rows-[250px]">
 
@@ -248,12 +280,64 @@
             }
 
         }
+
+        @* FAB *@
+        <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300
+            @(_showFloatingButton
+                             ? "opacity-100 translate-y-0 pointer-events-auto"
+                             : "opacity-0 -translate-y-4 pointer-events-none")">
+
+            <button @onclick="RefreshAndScrollUp"
+                    disabled="@_isRefreshing"
+                    class="group flex items-center gap-2 bg-gray-900/90 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full hover:bg-gray-800 hover:border-white/40 transition-all shadow-2xl active:scale-95 disabled:opacity-50">
+
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     class="h-4 w-4 text-blue-400 @(_isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500")"
+                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+
+                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                    @(_isRefreshing ? "Shuffling..." : "New Articles")
+                </span>
+            </button>
+        </div>
     </div>
 </div>
 
 
 @code {
 
+
+    //Vars 
+    private List<Article>? articles;
+    private int _visibleChunks = 5; // Shows 15 articles initially
+
+
+    #region Initial App Load 
+    protected override async Task OnInitializedAsync()
+    {
+        await FetchNewsAsync();
+        SetFilter("All"); // Always start on "All" when opening the app
+    }
+    #endregion
+
+    #region Fetching Articles 
+    private async Task FetchNewsAsync()
+    {
+        var fetchTasks = _feeds.Select(f => RssService.GetArticlesAsync(f.Url, f.Name, f.Category));
+        var results = await Task.WhenAll(fetchTasks);
+
+        articles = results.SelectMany(a => a)
+            .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl) &&
+                        !a.Link.Contains("buyside", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(_ => Random.Shared.Next())
+            .ToList();
+    }
+    #endregion
+
+    #region Date and Clock
     //clock
     private string _time = DateTime.Now.ToString("HH:mm:ss");
     private System.Timers.Timer? _timer;
@@ -270,61 +354,138 @@
         _timer.Start();
     }
 
-    // Always dispose of timers to prevent memory leaks
-    public void Dispose() => _timer?.Dispose();
+    
+    #endregion
 
+    #region Reshuffle Button
+    private bool _isRefreshing = false;
+
+    private async Task RefreshNews()
+    {
+        if (_isRefreshing) return;
+
+        _isRefreshing = true;
+        StateHasChanged(); // Triggers your loading spinner
+
+        await FetchNewsAsync(); // Re-download and shuffle everything
+        SetFilter(_activeFilter); // Re-apply the CURRENT tab and reset chunks
+
+        _isRefreshing = false;
+        StateHasChanged();
+    }
+    #endregion
+
+
+    #region Categories
+    private string _activeFilter = "All";
+    private IEnumerable<Article> DisplayedArticles
+    {
+        get
+        {
+            if (articles == null)
+            {
+                return Enumerable.Empty<Article>();
+            }
+
+            switch (_activeFilter)
+            {
+                case "New":
+                    DateTime current = DateTime.Now.AddHours(-12);
+                    return articles.Where(a => a.PublishedDate >= current);
+
+                //Only apply filter if the category is valid, otherwise default to "All"
+                case var cat when Categories.Contains(cat):
+                    return articles.Where(a => a.Category == cat);
+
+                case "All":
+                default:
+                    return articles;
+            }
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        _activeFilter = filter;
+        _visibleChunks = 5;
+
+        // Rebuild chunks using the filtered list!
+        ArticleChunks = DisplayedArticles
+            .Chunk(3)
+            .Select((items, index) => (index, items.ToList()))
+            .ToList();
+
+        StateHasChanged();
+    }
+
+    //center category pill
+    private async Task HandlePillClick(string category, string elementId)
+    {
+        // Run your core engine to update the articles
+        SetFilter(category);
+    
+        // Run the visual effect to center the pill
+        // A tiny delay ensures the DOM is ready before the scroll starts
+        await Task.Delay(10);
+        await JS.InvokeVoidAsync("scrollToElement", elementId);
+    }
+
+    #endregion
+
+
+    # region Article Cards
 
     // --- CARDS ---
-    private List<Article>? articles;
-    private int _visibleChunks = 5; // Shows 15 articles initially
 
     // Normal property to prevent re-rendering loops
     private List<(int Index, List<Article> Items)> ArticleChunks { get; set; } = new();
 
     private const string ProxyBase = "https://corsproxy.io/?url=";
 
-    private readonly (string Name, string Url)[] _feeds =
+    private static readonly string[] Categories = {"Top Stories", "World", "Business", "Finance", "Technology", "Sports", "Weather" };
+
+    private readonly (string Name, string Category, string Url)[] _feeds =
     {
-        ("FAZ", $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
-        ("FAZ", $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
-        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"),
-        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
-        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml"),
-        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml"),
-        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml"),
-        ("NYT", $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/US.xml"),
-        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness"),
-        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSMarketsMain"),
-        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWSJD"),
-        ("WSJ", $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWorldNews"),
-        ("FT",  $"{ProxyBase}https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss")
+        ("FAZ", Categories[0], $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
+        ("FAZ", Categories[1], $"{ProxyBase}https://www.faz.net/rss/aktuell/politik/"),
+        ("FAZ", Categories[2], $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
+        ("FAZ", Categories[3], $"{ProxyBase}https://www.faz.net/rss/aktuell/finanzen/"),
+        ("FAZ", Categories[4], $"{ProxyBase}https://www.faz.net/rss/aktuell/technik-motor/"),
+        ("FAZ", Categories[5], $"{ProxyBase}https://www.faz.net/rss/aktuell/sport/"),
+
+        ("NYT", Categories[0], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Africa.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Americas.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Europe.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/MiddleEast.xml"),
+        ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/US.xml"),
+        ("NYT", Categories[2], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Business.xml"),
+        ("NYT", Categories[3], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Economy.xml"),
+        ("NYT", Categories[4], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Technology.xml"),
+        ("NYT", Categories[5], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/ProFootball.xml"),
+        ("NYT", Categories[5], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Soccer.xml"),
+        ("NYT", Categories[6], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Climate.xml"),
+        ("NYT", Categories[6], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/Weather.xml"),
+
+        ("WSJ", Categories[0], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWorldNews"),
+        ("WSJ", Categories[0], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/socialpoliticsfeed"),
+        ("WSJ", Categories[0], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSUSnews"),
+        ("WSJ", Categories[1], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWorldNews"),
+        ("WSJ", Categories[2], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/WSJcomUSBusiness"),
+        ("WSJ", Categories[2], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSMarketsMain"),
+        ("WSJ", Categories[2], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/socialeconomyfeed"),
+        ("WSJ", Categories[3], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSPersonalFinance"),
+        ("WSJ", Categories[4], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWSJD"),
+        ("WSJ", Categories[5], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/rsssportsfeed"),
+    
+        ("FT", Categories[0], $"{ProxyBase}https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss"),
+        ("FT", Categories[1], $"{ProxyBase}https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss")
     };
 
-    protected override async Task OnInitializedAsync()
-    {
-        // Pass both pieces of data from the Tuple to the service
-        var fetchTasks = _feeds.Select(f => RssService.GetArticlesAsync(f.Url, f.Name));
 
-        var results = await Task.WhenAll(fetchTasks);
-
-        // Merge all lists
-        articles = results.SelectMany(a => a)
-        //Filter for images AND exclude "buyside" links
-        .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl) &&
-                    !a.Link.Contains("buyside", StringComparison.OrdinalIgnoreCase))
     
-        //Shuffle the filtered list
-        .OrderBy(_ => Random.Shared.Next())
-        .ToList();
-    
-        if (articles != null)
-        {
-            ArticleChunks = articles
-                .Chunk(3)
-                .Select((items, index) => (index, items.ToList()))
-                .ToList();
-        }
-    }
 
     private string GetTimeAgo(DateTime dateTime)
     {
@@ -335,56 +496,84 @@
         return "Just now";
     }
 
-
-    private bool _isRefreshing = false;
-
-    private async Task RefreshNews()
-    {
-        if (_isRefreshing) return; // Prevent double-clicks
-
-        _isRefreshing = true;
-    
-        // This re-runs your existing fetching, filtering, and shuffling logic
-        await OnInitializedAsync();
-
-        _isRefreshing = false;
-        StateHasChanged(); // Tells Blazor to "repaint" the UI with the new shuffle
-    }
+    #endregion
 
 
+
+    #region Load More Article Chunks
     private void LoadMore()
     {
-        _visibleChunks += 10; // Adds 20 more articles per click
+        _visibleChunks += 5; // Adds 15 more articles per click
     }
 
-    // 1. Add these two variables
-    private ElementReference observerTarget;
-    private DotNetObjectReference<Home>? dotNetHelper; // Change 'YourComponentName' to the actual name of your .razor file!
+    
+    // 1. Group all your variables together
+    private DotNetObjectReference<Home>? dotNetHelper;
 
-    // 2. Add OnAfterRenderAsync to start the observer
+    // Bottom Observer (Infinite Scroll)
+    private ElementReference observerTarget;
+    private bool _isObserverInitialized = false;
+
+    // Top Observer (Floating Button)
+    private bool _showFloatingButton = false;
+
+    // 2. The Merged Lifecycle Method
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        try
         {
-            dotNetHelper = DotNetObjectReference.Create(this);
+            if (firstRender)
+            {
+                dotNetHelper = DotNetObjectReference.Create(this);
+                await JS.InvokeVoidAsync("observerInterop.initializeScrollWatcher", dotNetHelper);
+            }
+
+            if (ArticleChunks.Count > 0 && !_isObserverInitialized && observerTarget.Context != null)
+            {
+                await JS.InvokeVoidAsync("observerInterop.initializeBottom", dotNetHelper, observerTarget);
+                _isObserverInitialized = true;
+            }
         }
-        
-        // Re-attach observer when the tracker renders
-        if (ArticleChunks.Count > _visibleChunks && observerTarget.Context != null)
+        catch (JSException ex)
         {
-            await JS.InvokeVoidAsync("observerInterop.initialize", dotNetHelper, observerTarget);
+            Console.Error.WriteLine($"JS interop error: {ex.Message}");
+            // Prevents the error from flooding every second
         }
     }
 
-    // 3. Mark LoadMore with [JSInvokable] so JavaScript can fire it
+    // Your Action Methods
+    [JSInvokable]
+    public void SetFabVisible(bool show)
+    {
+        _showFloatingButton = show;
+        StateHasChanged();
+    }
+
+    private async Task RefreshAndScrollUp()
+    {
+        _isObserverInitialized = false;
+
+        await RefreshNews();
+
+        await JS.InvokeVoidAsync("scrollToElement", "top-sentinel"); // matches the real id
+
+        await Task.Delay(800);
+
+        _isObserverInitialized = true;
+        StateHasChanged();
+    }
+
+    // Mark LoadMore with [JSInvokable] so JavaScript can fire it
     [JSInvokable]
     public void TriggerLoadMore()
     {
         _visibleChunks += 5;
         StateHasChanged(); // Tell Blazor to draw the new items
     }
+    #endregion
 
 
+    #region Modal
     //Modal
     // Declare the state variables
     private Article? _selectedArticle;
@@ -408,4 +597,18 @@
         _isClosing = false;
         StateHasChanged();
     }
+    #endregion
+
+
+    #region CleanUp
+    public void Dispose()
+    {
+         // Dispose of the timer to stop background tasks
+        _timer?.Dispose();
+
+        // Dispose of dotNetHelper to break the JS link
+        dotNetHelper?.Dispose();
+    }
+    #endregion
+
 }
