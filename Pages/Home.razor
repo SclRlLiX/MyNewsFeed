@@ -151,7 +151,7 @@
                                     <a href="@article.Link"
                                            @onclick="() => OpenModal(article)"
                                            @onclick:preventDefault
-                                           class="font-headline-text-only text-headline-small font-bold text-white line-clamp-4 mb-2 no-underline cursor-pointer">
+                                           class="font-headline text-headline-small font-bold text-white line-clamp-4 mb-2 no-underline cursor-pointer">
                                         @article.Headline
                                     </a>
                                 
@@ -201,7 +201,7 @@
             
                         @* 1. Top Image Section (Mirrors your Big Card) *@
                         <div class="relative h-64 w-full shrink-0">
-                            <img src="@_selectedArticle.ImageUrl" class="absolute block align-bottom inset-0 h-[calc(100%+1px)] w-full object-cover" />
+                            <img src="@_selectedArticle.ImageUrl" class="absolute block align-bottom inset-0 h-full w-full object-cover" />
     
                             @* Gradient to ensure text readability if the image is bright at the bottom *@
                             <div class="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-gray-900 to-transparent"></div>
@@ -226,7 +226,7 @@
                         <div class="p-6 overflow-y-auto">
                             @* Headline is now a direct link *@
                             <a href="@_selectedArticle.Link" target="_blank"
-                                   class="font-headline-text-only text-3xl font-bold text-white leading-tight hover:text-blue-400 transition-colors block mb-4">
+                                   class="font-headline-secondary text-3xl font-bold text-white leading-tight hover:text-blue-400 transition-colors block mb-4">
                                 @_selectedArticle.Headline
                             </a>
 
@@ -242,17 +242,6 @@
                             </div>
 
                         </div>
-
-
-                        @* 3. Action Footer *@
-                        @* <div class="p-4 bg-black/20 flex justify-between items-center">
-                            <button @onclick="CloseModal" class="text-gray-500 hover:text-white text-xs font-bold uppercase tracking-widest">
-                                Close
-                            </button>
-                            <a href="@_selectedArticle.Link" target="_blank" class="text-blue-500 font-bold text-xs uppercase tracking-widest hover:text-blue-400">
-                                Read Full Story
-                            </a>
-                        </div> *@
 
                     </div>
                 </div>
