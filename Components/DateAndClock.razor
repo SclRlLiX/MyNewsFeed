@@ -1,0 +1,38 @@
+﻿@implements IDisposable
+
+@* The Date: Small, Wide, and Colorful *@
+<span class="font-tag text-[10px] font-bold uppercase tracking-[0.3em] text-blue-500 mb-1">
+    @DateTime.Now.ToString("dddd, MMMM dd")
+</span>
+        
+@* The Time: Large, Bold, and Tabular *@
+<h1 class="font-jb-mono text-4xl font-black text-white tabular-nums">
+    @DateTime.Now.ToString("HH:mm")<span class="text-xl text-gray-500 ml-1">@DateTime.Now.ToString("ss")</span>
+</h1>
+
+@code {
+    #region Date and Clock
+    //clock
+    private System.Timers.Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        // Update every 1 second (1000ms)
+        _timer = new System.Timers.Timer(1000);
+        _timer.Elapsed += (s, e) =>
+        {
+            InvokeAsync(StateHasChanged); // Forces the UI to refresh
+        };
+        _timer.Start();
+    }
+
+    #endregion
+
+    #region CleanUp
+    public void Dispose()
+    {
+        // Dispose of the timer to stop background tasks
+        _timer?.Dispose();
+    }
+    #endregion
+}

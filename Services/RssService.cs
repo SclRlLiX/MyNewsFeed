@@ -42,6 +42,12 @@
                     item.Elements().FirstOrDefault(x => x.Name.LocalName == "thumbnail" || x.Name.LocalName == "content")
                     ?.Attribute("url")?.Value
 
+                    // Check <enclosure url="..." type="image/..."> 
+                    ?? item.Elements().FirstOrDefault(x =>
+                        x.Name.LocalName == "enclosure" &&
+                        (x.Attribute("type")?.Value.StartsWith("image/") ?? false))
+                    ?.Attribute("url")?.Value
+
                     // Fallback to the URL we "scraped" from the FT description
                     ?? extractedUrl
 

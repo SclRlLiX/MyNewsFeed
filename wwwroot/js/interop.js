@@ -1,11 +1,31 @@
 ﻿window.observerInterop = {
+
+    _bottomObserver: null,
+
     initializeBottom: function (dotNetHelper, element) {
-        let observer = new IntersectionObserver((entries) => {
+        // Guard: bail out if Blazor passed a stale or unresolved reference
+        if (!(element instanceof Element)) return;
+
+        // Disconnect any previous observer before attaching a new one
+        if (this._bottomObserver) {
+            this._bottomObserver.disconnect();
+            this._bottomObserver = null;
+        }
+
+        this._bottomObserver = new IntersectionObserver((entries) => {
             if (entries[0].isIntersecting) {
                 dotNetHelper.invokeMethodAsync('TriggerLoadMore');
             }
         });
-        observer.observe(element);
+
+        this._bottomObserver.observe(element);
+    },
+
+    disconnectBottom: function () {
+        if (this._bottomObserver) {
+            this._bottomObserver.disconnect();
+            this._bottomObserver = null;
+        }
     },
 
     initializeScrollWatcher: function (dotNetHelper) {
@@ -34,9 +54,6 @@ window.scrollToElement = function (elementId) {
     const el = document.getElementById(elementId);
     if (!el) return;
 
-    // For pill buttons: manually scroll the overflow container instead of using
-    // scrollIntoView(), which triggers Safari's focus management and steals focus
-    // from the clicked button to the adjacent one.
     const scrollableParent = el.closest('.overflow-x-auto');
     if (scrollableParent) {
         const containerRect = scrollableParent.getBoundingClientRect();

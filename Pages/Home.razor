@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using MyNewsFeed.Components
 @using MyNewsFeed.Models
 @using MyNewsFeed.Services
 @inject RssService RssService
@@ -14,15 +15,9 @@
 <div class="flex justify-between items-center mb-4 mt-2 px-2">
     @* Date and Time Column *@
     <div class="flex flex-col">
-        @* The Date: Small, Wide, and Colorful *@
-        <span class="font-tag text-[10px] font-bold uppercase tracking-[0.3em] text-blue-500 mb-1">
-            @DateTime.Now.ToString("dddd, MMMM dd")
-        </span>
         
-        @* The Time: Large, Bold, and Tabular *@
-        <h1 class="font-jb-mono text-4xl font-black text-white tabular-nums">
-            @DateTime.Now.ToString("HH:mm")<span class="text-xl text-gray-500 ml-1">@DateTime.Now.ToString("ss")</span>
-        </h1>
+        @* Date and Clock Component  *@
+        <DateAndClock/>
 
         @* Last refresh timestamp — sits below the clock *@
         <span class="font-jb-mono text-[9px] uppercase tracking-[0.15em] text-gray-600 mt-1">
@@ -30,52 +25,102 @@
         </span>
     </div>
 
-    <div class="flex flex-col items-end">
-        <button @onclick="RefreshNews"
-                disabled="@_isRefreshing"
-                class="group flex items-center gap-2 mt-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50">
-        
-            @* The Refresh Icon *@
+    @* Refresh Button - Only Show when articles have been loaded  *@
+    @if (_isAppReady)
+    {
+        <div class="flex flex-col items-end">
+            <button @onclick="RefreshNews"
+            disabled="@_isRefreshing"
+            class="group flex items-center gap-2 mt-4 bg-white/5 border border-white/10 px-4 py-2 rounded-full hover:bg-white/10 transition-all active:scale-95 disabled:opacity-50">
+
+                @* The Refresh Icon *@
+                <svg xmlns="http://www.w3.org/2000/svg"
+                class="h-4 w-4 text-blue-400 @(_isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500")"
+                fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+
+                <span class="font-jb-mono text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
+                    @(_isRefreshing ? "Shuffling..." : "Shuffle")
+                </span>
+            </button>
+        </div>
+    }
+</div>
+
+@* Search Bar — hidden during initial load, nothing to search yet *@
+@if(_isAppReady)
+{
+    <div class="px-2 mb-3">
+        <div class="relative flex items-center">
+
+            @* Search Icon *@
             <svg xmlns="http://www.w3.org/2000/svg"
-                 class="h-4 w-4 text-blue-400 @(_isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500")"
+                 class="absolute left-3 h-4 w-4 text-gray-500 pointer-events-none"
                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
 
-            <span class="font-jb-mono text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
-                @(_isRefreshing ? "Shuffling..." : "Shuffle")
-            </span>
-        </button>
+            @* Input *@
+            <input type="text"
+                   placeholder="SEARCH ARTICLES..."
+                   value="@_searchQuery"
+                   @oninput="HandleSearch"
+                   class="w-full bg-white/5 border border-white/10 rounded-full
+            pl-9 pr-9 py-2
+            font-jb-mono text-[10px] uppercase tracking-[0.15em]
+            text-gray-300 placeholder-gray-600
+            focus:outline-none focus:border-white/25 focus:bg-white/[0.07]
+            transition-all duration-200" />
+
+            @* Clear Button — only visible when there's text *@
+            @if (!string.IsNullOrEmpty(_searchQuery))
+            {
+                <button @onclick="ClearSearch" class="absolute right-3 text-gray-600 hover:text-gray-400 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         class="h-3.5 w-3.5"
+                         fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            }
+
+        </div>
     </div>
-</div>
+}
 
 @* categories *@
-<div class="flex items-center gap-2 overflow-x-auto pb-4 w-full scrollbar-hide mb-2">
-    
-    @* All Button *@
-    <button id="pill-All" @onclick='() => HandlePillClick("All", "pill-All")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
-        @(_activeFilter == "All" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
-        All
-    </button>
-    
-    @* New Button *@
-    <button id="pill-New" @onclick='() => HandlePillClick("New", "pill - New")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+@if (_isAppReady)
+{
+    <div class="flex items-center gap-2 overflow-x-auto pb-4 w-full scrollbar-hide mb-2">
+
+        @* New Button *@
+        <button id="pill-New" @onclick='() => HandlePillClick("New", "pill-New")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
         @(_activeFilter == "New" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
-        New
-    </button>
-
-    @* Category Buttons *@
-    @foreach (var category in Categories)
-    {
-        var id = $"pill-{category}";
-        <button id="@id" @onclick='() => HandlePillClick(category, id)' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
-            @(_activeFilter == category ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
-            @category
+            New
         </button>
-    }
 
-</div>
+        @* All Button *@
+        <button id="pill-All" @onclick='() => HandlePillClick("All", "pill-All")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+        @(_activeFilter == "All" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
+            All
+        </button>
+
+
+        @* Category Buttons *@
+        @foreach (var category in Categories)
+        {
+            var id = $"pill-{category}";
+            <button id="@id" @onclick='() => HandlePillClick(category, id)' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+            @(_activeFilter == category ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
+                @category
+            </button>
+        }
+    </div>
+}
 
 
 @* cards *@
@@ -249,6 +294,46 @@
                 }
             }
 
+            @if (ArticleChunks.Count == 0)
+            {
+                <div class="col-span-2 flex flex-col items-center justify-center py-16 px-4 gap-4">
+
+                    @* Icon *@
+                    <div class="h-14 w-14 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                             class="h-6 w-6 text-gray-600"
+                             fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                  d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l6 6v8a2 2 0 01-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                                  d="M9 13h6M9 17h4" />
+                        </svg>
+                    </div>
+
+                    @* Text *@
+                    <div class="flex flex-col items-center gap-1 text-center">
+                        <span class="font-jb-mono text-[11px] uppercase tracking-[0.2em] text-gray-400">
+                            No Articles Found
+                        </span>
+                        <span class="font-description text-[11px] text-gray-600">
+                            @(string.IsNullOrWhiteSpace(_searchQuery)
+                                ? "Nothing recent in this category."
+                                : $"No results for \"{_searchQuery}\"")
+                        </span>
+                    </div>
+
+                    @* Clear Search Button — only when searching *@
+                    @if (!string.IsNullOrWhiteSpace(_searchQuery))
+                    {
+                        <button @onclick="ClearSearch"
+                                class="mt-1 font-jb-mono text-[10px] uppercase tracking-[0.15em] text-blue-400
+                            hover:text-blue-300 transition-colors">
+                            Clear search
+                        </button>
+                    }
+                </div>
+            }
+
             @* Load More *@
             @if (ArticleChunks.Count > _visibleChunks)
             {
@@ -314,28 +399,31 @@
 
         }
 
-        @* FAB *@
-        <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300
+        @* FAB - Only Show when articles have been loaded  *@
+        @if (_isAppReady)
+        {
+            <div class="fixed top-6 left-1/2 -translate-x-1/2 z-50 transition-all duration-300
             @(_showFloatingButton
                              ? "opacity-100 translate-y-0 pointer-events-auto"
                              : "opacity-0 -translate-y-4 pointer-events-none")">
 
-            <button @onclick="RefreshAndScrollUp"
-                    disabled="@_isRefreshing"
-                    class="group flex items-center gap-2 bg-gray-900/90 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full hover:bg-gray-800 hover:border-white/40 transition-all shadow-2xl active:scale-95 disabled:opacity-50">
+                <button @onclick="RefreshAndScrollUp"
+                disabled="@_isRefreshing"
+                class="group flex items-center gap-2 bg-gray-900/90 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full hover:bg-gray-800 hover:border-white/40 transition-all shadow-2xl active:scale-95 disabled:opacity-50">
 
-                <svg xmlns="http://www.w3.org/2000/svg"
-                     class="h-4 w-4 text-blue-400 @(_isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500")"
-                     fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                    class="h-4 w-4 text-blue-400 @(_isRefreshing ? "animate-spin" : "group-hover:rotate-180 transition-transform duration-500")"
+                    fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
 
-                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
-                    @(_isRefreshing ? "Shuffling..." : "New Articles")
-                </span>
-            </button>
-        </div>
+                    <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-white">
+                        @(_isRefreshing ? "Shuffling..." : "New Articles")
+                    </span>
+                </button>
+            </div>
+        }
     </div>
 </div>
 
@@ -346,14 +434,16 @@
     //Vars 
     private List<Article>? articles;
     private int _visibleChunks = 5; // Shows 15 articles initially
-
+    private bool _isAppReady = false;
 
     #region Initial App Load 
     protected override async Task OnInitializedAsync()
     {
         await FetchNewsAsync();
-        SetFilter("All"); // Always start on "All" when opening the app
+        SetFilter("New");
         _lastUpdated = DateTime.Now;
+        _isAppReady = true;   // only true once articles + chunks are both ready
+        StateHasChanged();    // trigger the final render with everything ready
     }
     #endregion
 
@@ -363,33 +453,17 @@
         var fetchTasks = _feeds.Select(f => RssService.GetArticlesAsync(f.Url, f.Name, f.Category));
         var results = await Task.WhenAll(fetchTasks);
 
-        articles = results.SelectMany(a => a)
+        var arr = results.SelectMany(a => a)
             .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl) &&
                         !a.Link.Contains("buyside", StringComparison.OrdinalIgnoreCase))
-            .OrderBy(_ => Random.Shared.Next())
-            .ToList();
+            .ToArray();
+
+        Random.Shared.Shuffle(arr); // ✅ True Fisher-Yates shuffle
+        articles = [.. arr];
     }
     #endregion
-
-    #region Date and Clock
-    //clock
-    private string _time = DateTime.Now.ToString("HH:mm:ss");
-    private System.Timers.Timer? _timer;
-
-    protected override void OnInitialized()
-    {
-        // Update every 1 second (1000ms)
-        _timer = new System.Timers.Timer(1000);
-        _timer.Elapsed += (s, e) =>
-        {
-            _time = DateTime.Now.ToString("HH:mm:ss");
-            InvokeAsync(StateHasChanged); // Forces the UI to refresh
-        };
-        _timer.Start();
-    }
 
     
-    #endregion
 
     #region Reshuffle Button
     private bool _isRefreshing = false;
@@ -411,47 +485,92 @@
     }
     #endregion
 
+    #region Search
 
-    #region Categories
-    private string _activeFilter = "All";
-    private IEnumerable<Article> DisplayedArticles
+    private string _searchQuery = "";
+
+    private void HandleSearch(ChangeEventArgs e)
     {
-        get
-        {
-            if (articles == null)
-            {
-                return Enumerable.Empty<Article>();
-            }
-
-            switch (_activeFilter)
-            {
-                case "New":
-                    DateTime current = DateTime.Now.AddHours(-12);
-                    return articles.Where(a => a.PublishedDate >= current);
-
-                //Only apply filter if the category is valid, otherwise default to "All"
-                case var cat when Categories.Contains(cat):
-                    return articles.Where(a => a.Category == cat);
-
-                case "All":
-                default:
-                    return articles;
-            }
-        }
+        _searchQuery = e.Value?.ToString() ?? "";
+        RebuildChunks();
     }
 
-    private void SetFilter(string filter)
+    private void ClearSearch()
     {
-        _activeFilter = filter;
-        _visibleChunks = 5;
+        _searchQuery = "";
+        RebuildChunks();
+    }
 
-        // Rebuild chunks using the filtered list!
+    // Extracted so both SetFilter and search can call it
+    private void RebuildChunks()
+    {
+        _visibleChunks = 5;
+        _isObserverInitialized = false;
+
+        // Disconnect the old bottom observer — its target element is about to be removed from the DOM
+        JS.InvokeVoidAsync("observerInterop.disconnectBottom");
+
         ArticleChunks = DisplayedArticles
             .Chunk(3)
             .Select((items, index) => (index, items.ToList()))
             .ToList();
 
         StateHasChanged();
+    }
+
+    #endregion
+
+
+    #region Categories
+    private string _activeFilter = "New";
+    private IEnumerable<Article> DisplayedArticles
+    {
+        get
+        {
+            // Guard: nothing to show if articles haven't loaded yet
+            if (articles == null)
+            {
+                return Enumerable.Empty<Article>();
+            }
+
+            // Step 1 — Apply the active category filter
+            IEnumerable<Article> filteredArticles;
+
+            if (_activeFilter == "New")
+            {
+                // "New" means published within the last 12 hours
+                DateTime twelveHoursAgo = DateTime.Now.AddHours(-12);
+                filteredArticles = articles.Where(a => a.PublishedDate >= twelveHoursAgo);
+            }
+            else if (Categories.Contains(_activeFilter))
+            {
+                // A specific category is selected — match on the Category field
+                filteredArticles = articles.Where(a => a.Category == _activeFilter);
+            }
+            else
+            {
+                // "All" or any unknown filter — return everything
+                filteredArticles = articles;
+            }
+
+            // Step 2 — Apply the search query on top of the category filter
+            bool hasSearchQuery = !string.IsNullOrWhiteSpace(_searchQuery);
+
+            if (hasSearchQuery)
+            {
+                filteredArticles = filteredArticles.Where(a =>
+                    a.Headline.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    a.Description.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase));
+            }
+
+            return filteredArticles;
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        _activeFilter = filter;
+        RebuildChunks();
     }
 
     //center category pill
@@ -482,6 +601,15 @@
 
     private readonly (string Name, string Category, string Url)[] _feeds =
     {
+
+        
+        ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/topnews.rss"),
+        ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/latest.rss"),
+        ("WELT", Categories[2], $"{ProxyBase}https://www.welt.de/feeds/section/wirtschaft.rss"),
+        ("WELT", Categories[5], $"{ProxyBase}https://www.welt.de/feeds/section/sport.rss"),
+
+        ("DW", Categories[0], $"{ProxyBase}https://rss.dw.com/xml/rss-de-all"),
+
         ("FAZ", Categories[0], $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
         ("FAZ", Categories[1], $"{ProxyBase}https://www.faz.net/rss/aktuell/politik/"),
         ("FAZ", Categories[2], $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
@@ -516,6 +644,7 @@
         ("WSJ", Categories[4], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/RSSWSJD"),
         ("WSJ", Categories[5], $"{ProxyBase}https://feeds.content.dowjones.io/public/rss/rsssportsfeed"),
     
+        ("FT", Categories[0], $"{ProxyBase}https://www.ft.com/rss/home/international"),
         ("FT", Categories[0], $"{ProxyBase}https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss"),
         ("FT", Categories[1], $"{ProxyBase}https://www.ft.com/myft/following/7ea4d910-3fb7-4a6c-bda3-e2f5f9b3b14b.rss")
     };
@@ -639,9 +768,6 @@
     #region CleanUp
     public void Dispose()
     {
-         // Dispose of the timer to stop background tasks
-        _timer?.Dispose();
-
         // Dispose of dotNetHelper to break the JS link
         dotNetHelper?.Dispose();
     }
