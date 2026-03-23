@@ -56,6 +56,12 @@
 }
 
 
+/* Search Bar */ 
+.search-input {
+    font-size: 14px !important;
+}
+
+
 /*** Hide Horizontal Scroll Bar ***/
 /* Hide scrollbar for Chrome, Safari and Opera */
 .scrollbar-hide::-webkit-scrollbar {
@@ -278,3 +284,4 @@ code {
         background-color: rgba(0, 0, 0, 0.55) !important;
     }
 }
+
