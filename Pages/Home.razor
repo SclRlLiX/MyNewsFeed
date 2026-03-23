@@ -52,7 +52,7 @@
 @* Search Bar — hidden during initial load, nothing to search yet *@
 @if(_isAppReady)
 {
-    <div class="px-2 mb-3">
+    <div class="px-2 mb-4">
         <div class="relative flex items-center">
 
             @* Search Icon *@
@@ -95,7 +95,7 @@
 @* categories *@
 @if (_isAppReady)
 {
-    <div class="flex items-center gap-2 overflow-x-auto pb-4 w-full scrollbar-hide mb-2">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 w-full scrollbar-hide mb-2">
 
         @* New Button *@
         <button id="pill-New" @onclick='() => HandlePillClick("New", "pill-New")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
@@ -563,7 +563,11 @@
                     a.Description.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase));
             }
 
-            return filteredArticles;
+            // Step 3 — Sort: newest first for category/all tabs, keep shuffle for "New"
+            return _activeFilter == "New"
+                ? filteredArticles.OrderByDescending(a => a.PublishedDate)
+                : filteredArticles;
+
         }
     }
 
