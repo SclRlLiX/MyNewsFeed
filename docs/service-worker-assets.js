@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "cEgKXQgB",
+  "version": "qrlVwaLi",
   "assets": [
     {
       "hash": "sha256-47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=",
@@ -70,8 +70,8 @@ self.assetsManifest = {
       "url": "_framework/Microsoft.JSInterop.tkdtcliwht.wasm"
     },
     {
-      "hash": "sha256-wbllgy5jRgoIt9k+4gF2cPznG6UhT4MNZ/EsTb52Pv0=",
-      "url": "_framework/MyNewsFeed.x0ujrcnydm.wasm"
+      "hash": "sha256-oNzl6JInzZ2Hf+Ss2KBANob8rG9Vv/Guq6/mx/PKm2E=",
+      "url": "_framework/MyNewsFeed.8i5qtuhk44.wasm"
     },
     {
       "hash": "sha256-io8obePiwADu9R/7TSRupMZ9O6Em2vwcigtTAF6vrqg=",
@@ -106,8 +106,8 @@ self.assetsManifest = {
       "url": "_framework/System.ComponentModel.TypeConverter.83ztxezekf.wasm"
     },
     {
-      "hash": "sha256-9EMHkidqMU+9dtFoNwQmiDI2S19LXbVZeEyGiAHaqbk=",
-      "url": "_framework/System.Console.kmu4ogz3ub.wasm"
+      "hash": "sha256-g9E/2LQlJ1AvMhRbgwWn7zqdZ2/GaYnqeBj0ZRl6pfU=",
+      "url": "_framework/System.Console.f50b4qx3h0.wasm"
     },
     {
       "hash": "sha256-WB4pEad1c5kNXeCGSSRAyhLZo7oY/p5/O4S2blRUzpw=",
@@ -126,8 +126,8 @@ self.assetsManifest = {
       "url": "_framework/System.Memory.jixzlu55e6.wasm"
     },
     {
-      "hash": "sha256-rojLK1OO1oQfwWXQx8CwTCXa86a+JVrnRVQD6eg4NPY=",
-      "url": "_framework/System.Net.Http.u0lhw1ksk4.wasm"
+      "hash": "sha256-lif30OpqrpulX+xnSGFJr8PD9NhI96upbV6t4RddZIE=",
+      "url": "_framework/System.Net.Http.qceb3uq0h7.wasm"
     },
     {
       "hash": "sha256-gcSyjZCWlkUbsdHp/weRBWjtTl8KHsHa0LkHE9Xvnjw=",
@@ -194,8 +194,8 @@ self.assetsManifest = {
       "url": "_framework/blazor.webassembly.66stpp682q.js"
     },
     {
-      "hash": "sha256-tSu0m7HValO2J2sdyx7ziVxjm39sRWCXLK1ELJZwuAc=",
-      "url": "_framework/dotnet.jukbm434vs.js"
+      "hash": "sha256-Cq3pqTs51LH9IllTkEfCcTuUfUBiOHhxLyifpn0TOY8=",
+      "url": "_framework/dotnet.eakx2z030f.js"
     },
     {
       "hash": "sha256-Ebk+Km0uqtdo/srKe0YcuUOlFykCcKVkBt03gTWt0aU=",
@@ -238,7 +238,7 @@ self.assetsManifest = {
       "url": "icon-512.png"
     },
     {
-      "hash": "sha256-j9sn9dpA4E0kum7Lpb5cEKcxo5OGQa7ARwU5suPPJYo=",
+      "hash": "sha256-ABhVW+7dSbCxzmfsCgknJIppGHEZTmDmlv1WduJ7Sis=",
       "url": "index.html"
     },
     {

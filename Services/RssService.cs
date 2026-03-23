@@ -22,54 +22,78 @@
         {
             var articles = new List<Article>();
 
-            // 1. Download the raw XML from the RSS feed
-            var xmlString = await _http.GetStringAsync(feedUrl);
+            string xmlString;
 
-            // 2. Read the XML
-            var xml = XDocument.Parse(xmlString);
-
-            // 3. Loop through every <item> in the feed and turn it into an Article
-            foreach (var item in xml.Descendants("item"))
+            try
             {
-                var rawDesc = item.Element("description")?.Value ?? "";
-
-                // Call our "Separator"
-                var (cleanDescription, extractedUrl) = SplitImageAndDescription(rawDesc);
-
-                // Some feeds have the image in a separate tag; we check that first, 
-                // then fallback to the one we just "scraped" from the description.
-                var finalImageUrl =
-                    item.Elements().FirstOrDefault(x => x.Name.LocalName == "thumbnail" || x.Name.LocalName == "content")
-                    ?.Attribute("url")?.Value
-
-                    // Check <enclosure url="..." type="image/..."> 
-                    ?? item.Elements().FirstOrDefault(x =>
-                        x.Name.LocalName == "enclosure" &&
-                        (x.Attribute("type")?.Value.StartsWith("image/") ?? false))
-                    ?.Attribute("url")?.Value
-
-                    // Fallback to the URL we "scraped" from the FT description
-                    ?? extractedUrl
-
-                    // Final safety: empty string so the app doesn't crash
-                    ?? "";
-
-                // Get Description
-                var finalDescription =
-                    (!string.IsNullOrWhiteSpace(cleanDescription) ? cleanDescription : null)
-                    ?? item.Element("description")?.Value ?? ""; 
-
-                articles.Add(new Article
+                // 1. Download the raw XML from the RSS feed
+                var response = await _http.GetAsync(feedUrl);
+                if (!response.IsSuccessStatusCode)
                 {
-                    Headline = item.Element("title")?.Value ?? "No Title",
-                    Description = finalDescription,
-                    Link = item.Element("link")?.Value ?? "#",
-                    // RSS feeds usually store images in an <enclosure> tag
-                    ImageUrl = finalImageUrl,
-                    Source = sourceName,
-                    PublishedDate = DateTime.TryParse(item.Element("pubDate")?.Value, out var dt) ? dt : DateTime.Now,
-                    Category = category
-                });
+                    Console.WriteLine($"[RssService] Skipping feed ({(int)response.StatusCode}): {feedUrl}");
+                    return articles;
+                }
+
+                xmlString = await response.Content.ReadAsStringAsync();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RssService] Failed to fetch feed: {feedUrl} — {ex.Message}");
+                return articles;
+            }
+
+            try
+            {
+                // 2. Read the XML
+                var xml = XDocument.Parse(xmlString);
+
+                // 3. Loop through every <item> in the feed and turn it into an Article
+                foreach (var item in xml.Descendants("item"))
+                {
+                    var rawDesc = item.Element("description")?.Value ?? "";
+
+                    // Call our "Separator"
+                    var (cleanDescription, extractedUrl) = SplitImageAndDescription(rawDesc);
+
+                    // Some feeds have the image in a separate tag; we check that first, 
+                    // then fallback to the one we just "scraped" from the description.
+                    var finalImageUrl =
+                        item.Elements().FirstOrDefault(x => x.Name.LocalName == "thumbnail" || x.Name.LocalName == "content")
+                        ?.Attribute("url")?.Value
+
+                        // Check <enclosure url="..." type="image/..."> 
+                        ?? item.Elements().FirstOrDefault(x =>
+                            x.Name.LocalName == "enclosure" &&
+                            (x.Attribute("type")?.Value.StartsWith("image/") ?? false))
+                        ?.Attribute("url")?.Value
+
+                        // Fallback to the URL we "scraped" from the FT description
+                        ?? extractedUrl
+
+                        // Final safety: empty string so the app doesn't crash
+                        ?? "";
+
+                    // Get Description
+                    var finalDescription =
+                        (!string.IsNullOrWhiteSpace(cleanDescription) ? cleanDescription : null)
+                        ?? item.Element("description")?.Value ?? "";
+
+                    articles.Add(new Article
+                    {
+                        Headline = item.Element("title")?.Value ?? "No Title",
+                        Description = finalDescription,
+                        Link = item.Element("link")?.Value ?? "#",
+                        // RSS feeds usually store images in an <enclosure> tag
+                        ImageUrl = finalImageUrl,
+                        Source = sourceName,
+                        PublishedDate = DateTime.TryParse(item.Element("pubDate")?.Value, out var dt) ? dt : DateTime.Now,
+                        Category = category
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[RssService] Failed to parse feed: {feedUrl} — {ex.Message}");
             }
 
             return articles;
