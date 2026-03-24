@@ -456,9 +456,13 @@
         var arr = results.SelectMany(a => a)
             .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl) &&
                         !a.Link.Contains("buyside", StringComparison.OrdinalIgnoreCase))
+            .DistinctBy(a => (
+                a.Headline.Trim().ToLowerInvariant(),
+                a.Description.Trim().ToLowerInvariant()
+            ))
             .ToArray();
 
-        Random.Shared.Shuffle(arr); // ✅ True Fisher-Yates shuffle
+        Random.Shared.Shuffle(arr);
         articles = [.. arr];
     }
     #endregion
