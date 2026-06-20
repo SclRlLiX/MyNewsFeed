@@ -92,6 +92,23 @@
     </div>
 }
 
+@* news site buttons *@
+<div class="flex gap-2 mb-3">
+    <a href="https://www.nytimes.com" target="_blank" rel="noopener noreferrer"
+       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-medium py-2 rounded-lg hover:bg-neutral-800">
+        NYT
+    </a>
+    <a href="https://www.wsj.com" target="_blank" rel="noopener noreferrer"
+       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-medium py-2 rounded-lg hover:bg-neutral-800">
+        WSJ
+    </a>
+    <a href="https://www.ft.com" target="_blank" rel="noopener noreferrer"
+       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-medium py-2 rounded-lg hover:bg-neutral-800">
+        FT
+    </a>
+</div>
+
+
 @* categories *@
 @if (_isAppReady)
 {
@@ -611,19 +628,19 @@
     {
 
         
-        ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/topnews.rss"),
-        ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/latest.rss"),
-        ("WELT", Categories[2], $"{ProxyBase}https://www.welt.de/feeds/section/wirtschaft.rss"),
-        ("WELT", Categories[5], $"{ProxyBase}https://www.welt.de/feeds/section/sport.rss"),
+        // ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/topnews.rss"),
+        // ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/latest.rss"),
+        // ("WELT", Categories[2], $"{ProxyBase}https://www.welt.de/feeds/section/wirtschaft.rss"),
+        // ("WELT", Categories[5], $"{ProxyBase}https://www.welt.de/feeds/section/sport.rss"),
 
-        ("DW", Categories[0], $"{ProxyBase}https://rss.dw.com/xml/rss-de-all"),
+        // ("DW", Categories[0], $"{ProxyBase}https://rss.dw.com/xml/rss-de-all"),
 
-        ("FAZ", Categories[0], $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
-        ("FAZ", Categories[1], $"{ProxyBase}https://www.faz.net/rss/aktuell/politik/"),
-        ("FAZ", Categories[2], $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
-        ("FAZ", Categories[3], $"{ProxyBase}https://www.faz.net/rss/aktuell/finanzen/"),
-        ("FAZ", Categories[4], $"{ProxyBase}https://www.faz.net/rss/aktuell/technik-motor/"),
-        ("FAZ", Categories[5], $"{ProxyBase}https://www.faz.net/rss/aktuell/sport/"),
+        // ("FAZ", Categories[0], $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
+        // ("FAZ", Categories[1], $"{ProxyBase}https://www.faz.net/rss/aktuell/politik/"),
+        // ("FAZ", Categories[2], $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
+        // ("FAZ", Categories[3], $"{ProxyBase}https://www.faz.net/rss/aktuell/finanzen/"),
+        // ("FAZ", Categories[4], $"{ProxyBase}https://www.faz.net/rss/aktuell/technik-motor/"),
+        // ("FAZ", Categories[5], $"{ProxyBase}https://www.faz.net/rss/aktuell/sport/"),
 
         ("NYT", Categories[0], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"),
         ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
