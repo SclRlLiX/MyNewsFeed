@@ -42,7 +42,7 @@
                 </svg>
 
                 <span class="font-jb-mono text-[10px] font-bold uppercase tracking-[0.2em] text-gray-300">
-                    @(_isRefreshing ? "Shuffling..." : "Shuffle")
+                    @(_isRefreshing ? "Refreshing..." : "Refresh")
                 </span>
             </button>
         </div>
@@ -93,17 +93,17 @@
 }
 
 @* news site buttons *@
-<div class="flex gap-2 mb-3">
+<div class="flex gap-2 mb-3 font-headline-secondary">
     <a href="https://www.nytimes.com" target="_blank" rel="noopener noreferrer"
-       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-medium py-2 rounded-lg hover:bg-neutral-800">
+       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 tracking-[0.2em] text-md font-bold py-2 rounded-lg border-b-2 border-b-sky-400 hover:bg-neutral-800">
         NYT
     </a>
     <a href="https://www.wsj.com" target="_blank" rel="noopener noreferrer"
-       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-medium py-2 rounded-lg hover:bg-neutral-800">
+       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 tracking-[0.2em] text-md font-bold py-2 rounded-lg border-b-2 border-b-amber-400 hover:bg-neutral-800">
         WSJ
     </a>
     <a href="https://www.ft.com" target="_blank" rel="noopener noreferrer"
-       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 text-xs font-medium py-2 rounded-lg hover:bg-neutral-800">
+       class="flex-1 text-center bg-neutral-900 border border-neutral-800 text-neutral-200 tracking-[0.2em] text-md font-bold py-2 rounded-lg border-b-2 border-b-rose-400 hover:bg-neutral-800">
         FT
     </a>
 </div>
@@ -124,6 +124,12 @@
         <button id="pill-All" @onclick='() => HandlePillClick("All", "pill-All")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
         @(_activeFilter == "All" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
             All
+        </button>
+
+        @* DE Button *@
+        <button id="pill-DE" @onclick='() => HandlePillClick("DE", "pill-DE")' class="px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition-colors button-pill
+            @(_activeFilter == "DE" ? "bg-gray-100 text-gray-900" : "bg-transparent border border-gray-600 text-gray-300 hover:bg-gray-800")">
+            DE
         </button>
 
 
@@ -561,12 +567,18 @@
             {
                 // "New" means published within the last 12 hours
                 DateTime twelveHoursAgo = DateTime.Now.AddHours(-12);
-                filteredArticles = articles.Where(a => a.PublishedDate >= twelveHoursAgo);
+                filteredArticles = articles.Where(a => a.PublishedDate >= twelveHoursAgo && !GermanSources.Contains(a.Source));
+            }
+            else if (_activeFilter == "DE")
+            {
+                // "DE" filter — show only articles from German sources
+                filteredArticles = articles.Where(a => GermanSources.Contains(a.Source));
             }
             else if (Categories.Contains(_activeFilter))
             {
                 // A specific category is selected — match on the Category field
-                filteredArticles = articles.Where(a => a.Category == _activeFilter);
+                filteredArticles = filteredArticles = articles.Where(a => a.Category == _activeFilter && !GermanSources.Contains(a.Source));
+
             }
             else
             {
@@ -585,7 +597,7 @@
             }
 
             // Step 3 — Sort: newest first for category/all tabs, keep shuffle for "New"
-            return _activeFilter == "New"
+            return (_activeFilter == "New" || _activeFilter == "DE")
                 ? filteredArticles.OrderByDescending(a => a.PublishedDate)
                 : filteredArticles;
 
@@ -624,23 +636,25 @@
 
     private static readonly string[] Categories = {"Top Stories", "World", "Business", "Finance", "Technology", "Sports", "Weather" };
 
+    private static readonly HashSet<string> GermanSources = new() { "WELT", "DW", "FAZ" };
+
     private readonly (string Name, string Category, string Url)[] _feeds =
     {
 
         
-        // ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/topnews.rss"),
-        // ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/latest.rss"),
-        // ("WELT", Categories[2], $"{ProxyBase}https://www.welt.de/feeds/section/wirtschaft.rss"),
-        // ("WELT", Categories[5], $"{ProxyBase}https://www.welt.de/feeds/section/sport.rss"),
+        ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/topnews.rss"),
+        ("WELT", Categories[0], $"{ProxyBase}https://www.welt.de/feeds/latest.rss"),
+        ("WELT", Categories[2], $"{ProxyBase}https://www.welt.de/feeds/section/wirtschaft.rss"),
+        ("WELT", Categories[5], $"{ProxyBase}https://www.welt.de/feeds/section/sport.rss"),
 
-        // ("DW", Categories[0], $"{ProxyBase}https://rss.dw.com/xml/rss-de-all"),
+        ("DW", Categories[0], $"{ProxyBase}https://rss.dw.com/xml/rss-de-all"),
 
-        // ("FAZ", Categories[0], $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
-        // ("FAZ", Categories[1], $"{ProxyBase}https://www.faz.net/rss/aktuell/politik/"),
-        // ("FAZ", Categories[2], $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
-        // ("FAZ", Categories[3], $"{ProxyBase}https://www.faz.net/rss/aktuell/finanzen/"),
-        // ("FAZ", Categories[4], $"{ProxyBase}https://www.faz.net/rss/aktuell/technik-motor/"),
-        // ("FAZ", Categories[5], $"{ProxyBase}https://www.faz.net/rss/aktuell/sport/"),
+        ("FAZ", Categories[0], $"{ProxyBase}https://www.faz.net/rss/aktuell/"),
+        ("FAZ", Categories[1], $"{ProxyBase}https://www.faz.net/rss/aktuell/politik/"),
+        ("FAZ", Categories[2], $"{ProxyBase}https://www.faz.net/rss/aktuell/wirtschaft/"),
+        ("FAZ", Categories[3], $"{ProxyBase}https://www.faz.net/rss/aktuell/finanzen/"),
+        ("FAZ", Categories[4], $"{ProxyBase}https://www.faz.net/rss/aktuell/technik-motor/"),
+        ("FAZ", Categories[5], $"{ProxyBase}https://www.faz.net/rss/aktuell/sport/"),
 
         ("NYT", Categories[0], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml"),
         ("NYT", Categories[1], $"{ProxyBase}https://rss.nytimes.com/services/xml/rss/nyt/World.xml"),
