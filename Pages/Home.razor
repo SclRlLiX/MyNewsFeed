@@ -479,10 +479,8 @@
         var arr = results.SelectMany(a => a)
             .Where(a => !string.IsNullOrWhiteSpace(a.ImageUrl) &&
                         !a.Link.Contains("buyside", StringComparison.OrdinalIgnoreCase))
-            .DistinctBy(a => (
-                a.Headline.Trim().ToLowerInvariant(),
-                a.Description.Trim().ToLowerInvariant()
-            ))
+            .DistinctBy(a => a.Link.Split('?')[0].TrimEnd('/').ToLowerInvariant())
+            .DistinctBy(a => a.Headline.Trim().ToLowerInvariant())
             .ToArray();
 
         Random.Shared.Shuffle(arr);
@@ -577,7 +575,7 @@
             else if (Categories.Contains(_activeFilter))
             {
                 // A specific category is selected — match on the Category field
-                filteredArticles = filteredArticles = articles.Where(a => a.Category == _activeFilter && !GermanSources.Contains(a.Source));
+                filteredArticles = articles.Where(a => a.Category == _activeFilter && !GermanSources.Contains(a.Source));
 
             }
             else
